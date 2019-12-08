@@ -45,7 +45,8 @@ app.layout = html.Div(children=[
     className="mb-3"
   ),
   html.Div(id="ticker-out"),
-  html.Div(id='output-container-date-picker-range')
+  html.Div(id='output-container-date-picker-range'),
+  html.Div(id='ticker-graph')
 ])
 
 @app.callback(
@@ -75,5 +76,57 @@ def update_output(start_date, end_date):
   else:
     return string_prefix
 
+import yfinance as yf
+# Add another dropdown to get the values
+@app.callback(
+  dash.dependencies.Output('ticker-graph',    'children'),
+  [dash.dependencies.Input('ticker-range',    'start_date'),
+    dash.dependencies.Input('ticker-range',    'end_date'),
+    dash.dependencies.Input('ticker-search',    'value'),
+    dash.dependencies.Input('ticker-interval', 'value')
+])
+# Think about only doing on deselect
+def update_ticker_chart(start_date, end_date, ticker, interval):
+  if start_date is None or end_date is None:
+    return 'Select a Start Date and End Date'
+  if ticker is None:
+    # do a better map and append string when things are missing kinda like admin app
+    return 'Enter a ticker'
+  try:
+    tickerVal = yf.Ticker(ticker)
+  except ValueError:
+    return 'Ticker does not exist'
+  except Exception:
+    return 'Failed to get ticker'
+  # Array of dicts in plotly format
+  hist = tickerVal.history(start=start_date, end=end_date, interval=interval)
+  tickerData = []
+  if hist.empty == True:
+    raise ValueError('Empty Data Try Changing the period and range')
+  # Need to map datetime64 to datetime 
+  # https://community.plot.ly/t/datetime-axis-of-graph-element-does-not-show-the-correct-values/13537
+  tickerData.append(dict(
+    x=hist.index.to_pydatetime(),
+    y=hist["Open"],
+    name='{} Open'.format(ticker))
+  )
+  tickerData.append(dict(
+    x=hist.index.to_pydatetime(),
+    y=hist["Close"],
+    name='{} Close'.format(ticker))
+  )
+
+  return dcc.Graph(
+    figure=dict(
+        data=tickerData,
+        layout=dict(
+            title='Open and Close for {}'.format(ticker),
+            showlegend=True
+        ),
+        #
+    ),
+    id='my-graph'
+  )
+ 
 if __name__ == '__main__':
   app.run_server(debug=True)
