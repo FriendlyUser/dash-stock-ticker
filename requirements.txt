@@ -1,0 +1,4 @@
+dash_core_components==1.5.1
+dash_html_components==1.0.2
+dash==1.6.1
+yfinance==0.1.50
