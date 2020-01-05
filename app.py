@@ -47,7 +47,7 @@ app.layout = html.Div(children=[
   html.Div(id="ticker-out"),
   html.Div(id='output-container-date-picker-range'),
   html.Div(id='ticker-graph')
-])
+], className='container')
 
 @app.callback(
     dash.dependencies.Output("ticker-out", "children"),
