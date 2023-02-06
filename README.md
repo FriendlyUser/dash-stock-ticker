@@ -1,3 +1,13 @@
+---
+title: Dash Ticker App
+emoji: 📊
+colorFrom: red
+colorTo: red
+sdk: docker
+pinned: false
+license: openrail
+---
+
 # dash-stock-ticker
 Basic Stock Tracking App As described in Medium Articles
 

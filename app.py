@@ -1,10 +1,10 @@
-import dash
-import dash_html_components as html
-import dash_core_components as dcc
+from dash import dcc, html, Dash
+from dash.dependencies import Input, Output
 from datetime import datetime as dt, date
+import plotly.express as px
+import yfinance as yf
 
-app = dash.Dash(__name__)
-server = app.server
+app = Dash(__name__)
 
 app.layout = html.Div(children=[
   html.H2('Dates'),
@@ -50,16 +50,16 @@ app.layout = html.Div(children=[
 ], className='container')
 
 @app.callback(
-    dash.dependencies.Output("ticker-out", "children"),
-    [dash.dependencies.Input("ticker-search", "value")],
+    Output("ticker-out", "children"),
+    [Input("ticker-search", "value")],
 )
 def ticker_render(ticker):
   return "Ticker: {}".format(ticker)
 
 @app.callback(
-  dash.dependencies.Output('output-container-date-picker-range', 'children'),
-  [dash.dependencies.Input('ticker-range', 'start_date'),
-    dash.dependencies.Input('ticker-range', 'end_date')
+  Output('output-container-date-picker-range', 'children'),
+  [Input('ticker-range', 'start_date'),
+    Input('ticker-range', 'end_date')
   ])
 def update_output(start_date, end_date):
   string_prefix = 'You have selected: '
@@ -76,14 +76,13 @@ def update_output(start_date, end_date):
   else:
     return string_prefix
 
-import yfinance as yf
 # Add another dropdown to get the values
 @app.callback(
-  dash.dependencies.Output('ticker-graph',    'children'),
-  [dash.dependencies.Input('ticker-range',    'start_date'),
-    dash.dependencies.Input('ticker-range',    'end_date'),
-    dash.dependencies.Input('ticker-search',    'value'),
-    dash.dependencies.Input('ticker-interval', 'value')
+  Output('ticker-graph',    'children'),
+  [Input('ticker-range',    'start_date'),
+    Input('ticker-range',    'end_date'),
+    Input('ticker-search',    'value'),
+    Input('ticker-interval', 'value')
 ])
 # Think about only doing on deselect
 def update_ticker_chart(start_date, end_date, ticker, interval):
@@ -93,16 +92,23 @@ def update_ticker_chart(start_date, end_date, ticker, interval):
     # do a better map and append string when things are missing kinda like admin app
     return 'Enter a ticker'
   try:
-    tickerVal = yf.Ticker(ticker)
-  except ValueError:
+    stock = yf.Ticker("ZIM")
+  except ValueError as e:
+    print("What is this dogshit")
+    print(e)
     return 'Ticker does not exist'
-  except Exception:
+  except Exception as e:
+    print(e)
     return 'Failed to get ticker'
   # Array of dicts in plotly format
-  hist = tickerVal.history(start=start_date, end=end_date, interval=interval)
+  try:
+    hist = stock.history(start=start_date, end=end_date, interval=interval)
+  except Exception as e:
+    print("error", e)
+    return "Failure to get finance data"
   tickerData = []
-  if hist.empty == True:
-    raise ValueError('Empty Data Try Changing the period and range')
+  # if hist.empty == True:
+  #   raise ValueError('Empty Data Try Changing the period and range')
   # Need to map datetime64 to datetime 
   # https://community.plot.ly/t/datetime-axis-of-graph-element-does-not-show-the-correct-values/13537
   tickerData.append(dict(
@@ -127,6 +133,6 @@ def update_ticker_chart(start_date, end_date, ticker, interval):
     ),
     id='my-graph'
   )
- 
+
 if __name__ == '__main__':
-  app.run_server(debug=True)
+  app.run_server(debug=True, port=8050)
